@@ -835,9 +835,91 @@
   }
 
   ::selection{ background:var(--gold); color:#1c1608; }
+
+  /* ---------------- ACCESS GATE ---------------- */
+  .gate{
+    position:fixed; inset:0;
+    z-index:50;
+    background:var(--ink-0);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+  }
+  .gate.hidden{ display:none; }
+  .gate-card{
+    width:100%;
+    max-width:420px;
+    text-align:center;
+  }
+  .gate-mark{
+    color:var(--gold);
+    font-size:11px;
+    letter-spacing:0.32em;
+    text-transform:uppercase;
+    margin-bottom:16px;
+    font-family:var(--sans);
+    font-weight:600;
+  }
+  .gate-card h2{
+    font-family:var(--headline);
+    font-weight:600;
+    font-size:1.7rem;
+    color:var(--ivory);
+    margin:0 0 10px;
+  }
+  .gate-card p{
+    font-family:var(--sans);
+    font-size:13px;
+    color:var(--mute);
+    line-height:1.6;
+    margin:0 0 26px;
+  }
+  .gate-card input{
+    width:100%;
+    background:var(--ink-1);
+    border:1px solid var(--hair-bright);
+    color:var(--ivory);
+    font-family:var(--sans);
+    font-size:14px;
+    padding:13px 16px;
+    margin-bottom:12px;
+    text-align:center;
+  }
+  .gate-card input:focus{ outline:none; border-color:var(--gold); }
+  .gate-card button{
+    width:100%;
+    background:var(--gold);
+    color:#1c1608;
+    border:none;
+    font-family:var(--sans);
+    font-weight:700;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    font-size:12.5px;
+    padding:14px;
+    cursor:pointer;
+  }
+  .gate-card button:hover{ background:var(--gold-bright); }
+  .gate-error{
+    color:#d98a6a;
+    font-size:12.5px;
+    margin:-4px 0 14px;
+    display:none;
+  }
 </style>
 </head>
 <body>
+<div class="gate" id="gate">
+  <div class="gate-card">
+    <div class="gate-mark">Elliot Systems · Restricted</div>
+    <h2>Team Access Only</h2>
+    <p>Enter your @elliotsystems.com email to view the SOC 2 audit countdown.</p>
+    <div class="gate-error" id="gateError">That doesn't look like an elliotsystems.com email.</div>
+    <input type="email" id="gateEmail" placeholder="you@elliotsystems.com" autocomplete="email">
+    <button id="gateSubmit">Enter</button>
+  </div>
+</div>
 <div class="atmosphere"></div>
 <svg class="grain" width="100%" height="100%" preserveAspectRatio="none">
   <filter id="noiseFilter"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" stitchTiles="stitch"/></filter>
@@ -1006,6 +1088,66 @@
 <script>
 (function(){
   "use strict";
+
+  /* ---------------- ACCESS GATE ---------------- */
+  var ALLOWED_DOMAIN = 'elliotsystems.com';
+  var GATE_KEY = 'soc2_gate_email';
+
+  function isAllowedEmail(email){
+    if(typeof email !== 'string') return false;
+    var trimmed = email.trim().toLowerCase();
+    var at = trimmed.lastIndexOf('@');
+    if(at === -1) return false;
+    return trimmed.slice(at + 1) === ALLOWED_DOMAIN;
+  }
+
+  function reportAccess(email, ok){
+    fetch('/api/access', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email })
+    }).catch(function(){ /* offline/local preview: ignore */ });
+    return ok;
+  }
+
+  var gateEl = document.getElementById('gate');
+  var gateEmailInput = document.getElementById('gateEmail');
+  var gateError = document.getElementById('gateError');
+  var gateSubmitBtn = document.getElementById('gateSubmit');
+
+  function unlock(email){
+    try{ localStorage.setItem(GATE_KEY, email); }catch(e){}
+    gateEl.classList.add('hidden');
+  }
+
+  function attemptUnlock(){
+    var email = gateEmailInput.value;
+    var ok = isAllowedEmail(email);
+    reportAccess(email, ok);
+    if(ok){
+      unlock(email.trim().toLowerCase());
+    } else {
+      gateError.style.display = 'block';
+    }
+  }
+
+  gateSubmitBtn.addEventListener('click', attemptUnlock);
+  gateEmailInput.addEventListener('keydown', function(e){
+    if(e.key === 'Enter') attemptUnlock();
+  });
+  gateEmailInput.addEventListener('input', function(){
+    gateError.style.display = 'none';
+  });
+
+  (function checkExistingAccess(){
+    var saved = null;
+    try{ saved = localStorage.getItem(GATE_KEY); }catch(e){}
+    if(saved && isAllowedEmail(saved)){
+      gateEl.classList.add('hidden');
+    } else {
+      gateEmailInput.focus();
+    }
+  })();
 
   /* ---------------- LOCK DOWN: no selection, no context menu, no copy ---------------- */
   document.addEventListener('contextmenu', function(e){ e.preventDefault(); });

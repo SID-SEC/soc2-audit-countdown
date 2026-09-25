@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Access Log — Admin · Elliot Systems</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600;700&family=M+PLUS+Rounded+1c:wght@700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink-0:#0a0b0d; --ink-1:#101216; --ink-2:#171a1f;
+    --hair:rgba(233,220,190,0.10); --hair-bright:rgba(233,220,190,0.22);
+    --ivory:#f2ede2; --ivory-dim:#c9c3b6; --mute:#7d8087;
+    --gold:#cba36a; --gold-bright:#e7c98d; --gold-dim:#8a7147;
+    --sans:'Libre Franklin', sans-serif;
+    --display:'M PLUS Rounded 1c', sans-serif;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ height:100%; margin:0; }
+  body{
+    background:var(--ink-0);
+    color:var(--ivory);
+    font-family:var(--sans);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+  }
+  .card{
+    width:100%;
+    max-width:420px;
+    border:1px solid var(--hair-bright);
+    background:var(--ink-1);
+    padding:32px;
+  }
+  .card h1{
+    margin:0 0 6px;
+    font-size:20px;
+    font-weight:700;
+    color:var(--ivory);
+  }
+  .card p{
+    margin:0 0 22px;
+    font-size:13px;
+    color:var(--mute);
+  }
+  label{
+    display:block;
+    font-size:11px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:var(--mute);
+    margin-bottom:8px;
+  }
+  input{
+    width:100%;
+    background:var(--ink-0);
+    border:1px solid var(--hair-bright);
+    color:var(--ivory);
+    font-family:var(--sans);
+    font-size:14px;
+    padding:12px 14px;
+    margin-bottom:14px;
+  }
+  input:focus{ outline:none; border-color:var(--gold); }
+  button{
+    width:100%;
+    background:var(--gold);
+    color:#1c1608;
+    border:none;
+    font-family:var(--sans);
+    font-weight:700;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    font-size:12.5px;
+    padding:13px;
+    cursor:pointer;
+  }
+  button:hover{ background:var(--gold-bright); }
+  .error{
+    color:#d98a6a;
+    font-size:12.5px;
+    margin:-4px 0 14px;
+    display:none;
+  }
+
+  /* ---- dashboard ---- */
+  .dash{
+    display:none;
+    width:100%;
+    max-width:1000px;
+  }
+  .dash-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:20px;
+    flex-wrap:wrap;
+    gap:12px;
+  }
+  .dash-head h1{ margin:0; font-size:20px; }
+  .dash-head .sub{ color:var(--mute); font-size:12.5px; margin-top:4px; }
+  .logout-btn{
+    width:auto;
+    background:transparent;
+    border:1px solid var(--hair-bright);
+    color:var(--mute);
+    padding:9px 16px;
+  }
+  .logout-btn:hover{ color:var(--ivory); border-color:var(--gold-dim); background:transparent; }
+  table{
+    width:100%;
+    border-collapse:collapse;
+    border:1px solid var(--hair-bright);
+    font-size:13px;
+  }
+  thead th{
+    text-align:left;
+    font-size:10.5px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:var(--mute);
+    padding:10px 12px;
+    border-bottom:1px solid var(--hair-bright);
+    background:var(--ink-2);
+  }
+  tbody td{
+    padding:10px 12px;
+    border-bottom:1px solid var(--hair);
+    color:var(--ivory-dim);
+    vertical-align:top;
+  }
+  tbody tr:last-child td{ border-bottom:none; }
+  .ok{ color:var(--gold-bright); font-weight:600; }
+  .bad{ color:#d98a6a; font-weight:600; }
+  .empty{ text-align:center; color:var(--mute); padding:30px; }
+  .refresh-btn{
+    width:auto;
+    background:transparent;
+    border:1px solid var(--hair-bright);
+    color:var(--ivory-dim);
+    padding:9px 16px;
+  }
+</style>
+</head>
+<body>
+
+  <div class="card" id="loginCard">
+    <h1>Access Log</h1>
+    <p>Admin login required to view who has accessed the SOC 2 countdown page.</p>
+    <div class="error" id="loginError">Incorrect password.</div>
+    <label for="pw">Password</label>
+    <input type="password" id="pw" placeholder="••••••••" autocomplete="current-password">
+    <button id="loginBtn">Log in</button>
+  </div>
+
+  <div class="dash" id="dash">
+    <div class="dash-head">
+      <div>
+        <h1>Access Log</h1>
+        <div class="sub" id="countLabel">—</div>
+      </div>
+      <div style="display:flex; gap:10px;">
+        <button class="refresh-btn" id="refreshBtn">Refresh</button>
+        <button class="logout-btn" id="logoutBtn">Log out</button>
+      </div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Email</th>
+          <th>Status</th>
+          <th>IP</th>
+          <th>User Agent</th>
+          <th>Time (UTC)</th>
+        </tr>
+      </thead>
+      <tbody id="logBody"></tbody>
+    </table>
+  </div>
+
+<script>
+(function(){
+  "use strict";
+
+  var loginCard = document.getElementById('loginCard');
+  var dash = document.getElementById('dash');
+  var loginError = document.getElementById('loginError');
+
+  function escapeHtml(s){
+    var d = document.createElement('div');
+    d.textContent = s == null ? '' : String(s);
+    return d.innerHTML;
+  }
+
+  function showDash(){
+    loginCard.style.display = 'none';
+    dash.style.display = 'block';
+    loadLogs();
+  }
+
+  function showLogin(){
+    dash.style.display = 'none';
+    loginCard.style.display = 'block';
+  }
+
+  function loadLogs(){
+    fetch('/api/admin/logs', { credentials: 'same-origin' })
+      .then(function(r){
+        if(!r.ok) throw new Error('unauthorized');
+        return r.json();
+      })
+      .then(function(data){
+        var rows = data.rows || [];
+        document.getElementById('countLabel').textContent = rows.length + ' attempt' + (rows.length === 1 ? '' : 's') + ' logged';
+        var body = document.getElementById('logBody');
+        if(!rows.length){
+          body.innerHTML = '<tr><td colspan="5" class="empty">No access attempts logged yet.</td></tr>';
+          return;
+        }
+        body.innerHTML = rows.map(function(row){
+          return '<tr>' +
+            '<td>' + escapeHtml(row.email) + '</td>' +
+            '<td class="' + (row.domain_ok ? 'ok' : 'bad') + '">' + (row.domain_ok ? 'Granted' : 'Denied') + '</td>' +
+            '<td>' + escapeHtml(row.ip) + '</td>' +
+            '<td style="max-width:260px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escapeHtml(row.user_agent) + '</td>' +
+            '<td>' + escapeHtml(row.created_at) + '</td>' +
+            '</tr>';
+        }).join('');
+      })
+      .catch(function(){
+        showLogin();
+      });
+  }
+
+  document.getElementById('loginBtn').addEventListener('click', function(){
+    var pw = document.getElementById('pw').value;
+    loginError.style.display = 'none';
+    fetch('/api/admin/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ password: pw })
+    })
+      .then(function(r){ return r.json().then(function(d){ return { status: r.status, body: d }; }); })
+      .then(function(res){
+        if(res.body && res.body.ok){
+          showDash();
+        } else {
+          loginError.style.display = 'block';
+        }
+      })
+      .catch(function(){
+        loginError.style.display = 'block';
+      });
+  });
+
+  document.getElementById('pw').addEventListener('keydown', function(e){
+    if(e.key === 'Enter') document.getElementById('loginBtn').click();
+  });
+
+  document.getElementById('logoutBtn').addEventListener('click', function(){
+    fetch('/api/admin/logout', { method: 'POST', credentials: 'same-origin' }).then(showLogin);
+  });
+
+  document.getElementById('refreshBtn').addEventListener('click', loadLogs);
+
+  // If already logged in (valid cookie), skip straight to dashboard.
+  fetch('/api/admin/session', { credentials: 'same-origin' })
+    .then(function(r){ if(r.ok) showDash(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>

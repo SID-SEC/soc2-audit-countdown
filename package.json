@@ -1,0 +1,18 @@
+{
+  "name": "soc2-audit-countdown",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SOC 2 audit countdown page with an email-domain access gate and admin access log.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.3.0",
+    "cookie": "^0.6.0",
+    "express": "^4.19.2"
+  }
+}
